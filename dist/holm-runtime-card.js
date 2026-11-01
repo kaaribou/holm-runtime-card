@@ -1,4 +1,4 @@
-/* holm-runtime-card — https://github.com/kaaribou/holm-runtime-card — licence MIT — v1.1.0 */
+/* holm-runtime-card — https://github.com/kaaribou/holm-runtime-card — licence MIT — v1.2.0 */
 // holm-runtime-card — temps de fonctionnement calculé directement depuis l'historique (recorder), sans helper
 // Config (éditeur visuel disponible) :
 //   type: custom:holm-runtime-card
@@ -17,7 +17,110 @@
 //       on_power: 30                        # puissance en marche (W) — auto si absent
 //       idle_power: 0                       # consommation à l'arrêt (W)
 (() => {
-  const VERSION = "1.1.0";
+  const VERSION = "1.2.0";
+  // ───────────────────────── traductions ─────────────────────────
+  const I18N = {
+    fr: { title: "Temps de fonctionnement", today: "Aujourd'hui", yesterday: "Hier", week: "Semaine", month: "Mois", year: "Année",
+      no_device: "Ajoutez un appareil dans l'éditeur de la carte.", error: "Erreur", loading: "Chargement…",
+      partial: "Historique incomplet sur cette période", estimated: "Estimé depuis les statistiques de puissance avant les 30 derniers jours",
+      mode_state: "Selon son état (on, heat…)", mode_above: "Valeur au-dessus d'un seuil", mode_below: "Valeur en dessous d'un seuil",
+      l_title: "Titre", l_refresh: "Recalcul (minutes)", l_animation: "Animer les appareils en marche", l_language: "Langue", auto: "Automatique (profil)",
+      l_entity: "Entité suivie", l_name: "Nom affiché", l_icon: "Icône", l_mode: "En marche quand…",
+      l_on_states: "États « en marche » (séparés par des virgules)", l_threshold: "Seuil",
+      l_power_entity: "Capteur de puissance (statistiques)", l_on_power: "Puissance en marche (W, auto si vide)", l_idle_power: "Consommation à l'arrêt (W)",
+      h_on_states: "Par défaut : on. Exemple pour un thermostat : heat, cool", h_threshold: "Par exemple 3 pour « en marche au-dessus de 3 W »",
+      h_power_entity: "Facultatif : estime la colonne Année au-delà de l'historique conservé", year_section: "Colonne Année (facultatif)",
+      devices: "Appareils", new_device: "Nouvel appareil", pick_entity: "choisissez une entité", up: "Monter", down: "Descendre", del: "Supprimer", add: "Ajouter un appareil",
+      card_name: "HOLM – Temps de fonctionnement", card_desc: "Durée de marche par appareil calculée depuis l'historique, sans helper" },
+    en: { title: "Runtime", today: "Today", yesterday: "Yesterday", week: "Week", month: "Month", year: "Year",
+      no_device: "Add a device in the card editor.", error: "Error", loading: "Loading…",
+      partial: "Incomplete history for this period", estimated: "Estimated from power statistics before the last 30 days",
+      mode_state: "By its state (on, heat…)", mode_above: "Value above a threshold", mode_below: "Value below a threshold",
+      l_title: "Title", l_refresh: "Refresh (minutes)", l_animation: "Animate running devices", l_language: "Language", auto: "Automatic (profile)",
+      l_entity: "Tracked entity", l_name: "Display name", l_icon: "Icon", l_mode: "Running when…",
+      l_on_states: "“Running” states (comma-separated)", l_threshold: "Threshold",
+      l_power_entity: "Power sensor (statistics)", l_on_power: "Running power (W, auto if empty)", l_idle_power: "Idle power (W)",
+      h_on_states: "Default: on. Example for a thermostat: heat, cool", h_threshold: "For example 3 for “running above 3 W”",
+      h_power_entity: "Optional: estimates the Year column beyond the kept history", year_section: "Year column (optional)",
+      devices: "Devices", new_device: "New device", pick_entity: "choose an entity", up: "Move up", down: "Move down", del: "Delete", add: "Add a device",
+      card_name: "HOLM – Runtime", card_desc: "Running time per device computed from history, no helper needed" },
+    de: { title: "Laufzeit", today: "Heute", yesterday: "Gestern", week: "Woche", month: "Monat", year: "Jahr",
+      no_device: "Fügen Sie im Karteneditor ein Gerät hinzu.", error: "Fehler", loading: "Wird geladen…",
+      partial: "Unvollständiger Verlauf in diesem Zeitraum", estimated: "Geschätzt aus Leistungsstatistiken vor den letzten 30 Tagen",
+      mode_state: "Nach Zustand (on, heat…)", mode_above: "Wert über einem Schwellenwert", mode_below: "Wert unter einem Schwellenwert",
+      l_title: "Titel", l_refresh: "Neuberechnung (Minuten)", l_animation: "Laufende Geräte animieren", l_language: "Sprache", auto: "Automatisch (Profil)",
+      l_entity: "Überwachte Entität", l_name: "Anzeigename", l_icon: "Symbol", l_mode: "Läuft, wenn…",
+      l_on_states: "„Laufend“-Zustände (durch Kommas getrennt)", l_threshold: "Schwellenwert",
+      l_power_entity: "Leistungssensor (Statistiken)", l_on_power: "Leistung im Betrieb (W, automatisch wenn leer)", l_idle_power: "Leistung im Ruhezustand (W)",
+      h_on_states: "Standard: on. Beispiel für ein Thermostat: heat, cool", h_threshold: "Zum Beispiel 3 für „läuft über 3 W“",
+      h_power_entity: "Optional: schätzt die Spalte Jahr über den gespeicherten Verlauf hinaus", year_section: "Spalte Jahr (optional)",
+      devices: "Geräte", new_device: "Neues Gerät", pick_entity: "Entität wählen", up: "Nach oben", down: "Nach unten", del: "Löschen", add: "Gerät hinzufügen",
+      card_name: "HOLM – Laufzeit", card_desc: "Laufzeit pro Gerät aus dem Verlauf berechnet, ohne Helfer" },
+    es: { title: "Tiempo de funcionamiento", today: "Hoy", yesterday: "Ayer", week: "Semana", month: "Mes", year: "Año",
+      no_device: "Añade un dispositivo en el editor de la tarjeta.", error: "Error", loading: "Cargando…",
+      partial: "Historial incompleto en este periodo", estimated: "Estimado a partir de las estadísticas de potencia anteriores a los últimos 30 días",
+      mode_state: "Según su estado (on, heat…)", mode_above: "Valor por encima de un umbral", mode_below: "Valor por debajo de un umbral",
+      l_title: "Título", l_refresh: "Recálculo (minutos)", l_animation: "Animar los dispositivos en marcha", l_language: "Idioma", auto: "Automático (perfil)",
+      l_entity: "Entidad seguida", l_name: "Nombre mostrado", l_icon: "Icono", l_mode: "En marcha cuando…",
+      l_on_states: "Estados «en marcha» (separados por comas)", l_threshold: "Umbral",
+      l_power_entity: "Sensor de potencia (estadísticas)", l_on_power: "Potencia en marcha (W, automática si está vacío)", l_idle_power: "Consumo en reposo (W)",
+      h_on_states: "Por defecto: on. Ejemplo para un termostato: heat, cool", h_threshold: "Por ejemplo 3 para «en marcha por encima de 3 W»",
+      h_power_entity: "Opcional: estima la columna Año más allá del historial conservado", year_section: "Columna Año (opcional)",
+      devices: "Dispositivos", new_device: "Nuevo dispositivo", pick_entity: "elige una entidad", up: "Subir", down: "Bajar", del: "Eliminar", add: "Añadir un dispositivo",
+      card_name: "HOLM – Tiempo de funcionamiento", card_desc: "Tiempo de marcha por dispositivo calculado a partir del historial, sin ayudante" },
+    it: { title: "Tempo di funzionamento", today: "Oggi", yesterday: "Ieri", week: "Settimana", month: "Mese", year: "Anno",
+      no_device: "Aggiungi un dispositivo nell'editor della scheda.", error: "Errore", loading: "Caricamento…",
+      partial: "Cronologia incompleta per questo periodo", estimated: "Stimato dalle statistiche di potenza precedenti agli ultimi 30 giorni",
+      mode_state: "In base allo stato (on, heat…)", mode_above: "Valore sopra una soglia", mode_below: "Valore sotto una soglia",
+      l_title: "Titolo", l_refresh: "Ricalcolo (minuti)", l_animation: "Anima i dispositivi in funzione", l_language: "Lingua", auto: "Automatica (profilo)",
+      l_entity: "Entità monitorata", l_name: "Nome visualizzato", l_icon: "Icona", l_mode: "In funzione quando…",
+      l_on_states: "Stati «in funzione» (separati da virgole)", l_threshold: "Soglia",
+      l_power_entity: "Sensore di potenza (statistiche)", l_on_power: "Potenza in funzione (W, automatica se vuota)", l_idle_power: "Consumo a riposo (W)",
+      h_on_states: "Predefinito: on. Esempio per un termostato: heat, cool", h_threshold: "Ad esempio 3 per «in funzione sopra 3 W»",
+      h_power_entity: "Facoltativo: stima la colonna Anno oltre la cronologia conservata", year_section: "Colonna Anno (facoltativa)",
+      devices: "Dispositivi", new_device: "Nuovo dispositivo", pick_entity: "scegli un'entità", up: "Sposta su", down: "Sposta giù", del: "Elimina", add: "Aggiungi un dispositivo",
+      card_name: "HOLM – Tempo di funzionamento", card_desc: "Tempo di funzionamento per dispositivo calcolato dalla cronologia, senza helper" },
+    nl: { title: "Looptijd", today: "Vandaag", yesterday: "Gisteren", week: "Week", month: "Maand", year: "Jaar",
+      no_device: "Voeg een apparaat toe in de kaarteditor.", error: "Fout", loading: "Laden…",
+      partial: "Onvolledige geschiedenis voor deze periode", estimated: "Geschat op basis van vermogensstatistieken van vóór de laatste 30 dagen",
+      mode_state: "Op basis van de status (on, heat…)", mode_above: "Waarde boven een drempel", mode_below: "Waarde onder een drempel",
+      l_title: "Titel", l_refresh: "Herberekening (minuten)", l_animation: "Actieve apparaten animeren", l_language: "Taal", auto: "Automatisch (profiel)",
+      l_entity: "Gevolgde entiteit", l_name: "Weergavenaam", l_icon: "Pictogram", l_mode: "Actief wanneer…",
+      l_on_states: "‘Actief’-statussen (gescheiden door komma's)", l_threshold: "Drempel",
+      l_power_entity: "Vermogenssensor (statistieken)", l_on_power: "Vermogen bij werking (W, automatisch indien leeg)", l_idle_power: "Verbruik in rust (W)",
+      h_on_states: "Standaard: on. Voorbeeld voor een thermostaat: heat, cool", h_threshold: "Bijvoorbeeld 3 voor ‘actief boven 3 W’",
+      h_power_entity: "Optioneel: schat de kolom Jaar buiten de bewaarde geschiedenis", year_section: "Kolom Jaar (optioneel)",
+      devices: "Apparaten", new_device: "Nieuw apparaat", pick_entity: "kies een entiteit", up: "Omhoog", down: "Omlaag", del: "Verwijderen", add: "Apparaat toevoegen",
+      card_name: "HOLM – Looptijd", card_desc: "Looptijd per apparaat berekend uit de geschiedenis, zonder helper" },
+    pt: { title: "Tempo de funcionamento", today: "Hoje", yesterday: "Ontem", week: "Semana", month: "Mês", year: "Ano",
+      no_device: "Adicione um dispositivo no editor do cartão.", error: "Erro", loading: "A carregar…",
+      partial: "Histórico incompleto neste período", estimated: "Estimado a partir das estatísticas de potência anteriores aos últimos 30 dias",
+      mode_state: "Pelo estado (on, heat…)", mode_above: "Valor acima de um limite", mode_below: "Valor abaixo de um limite",
+      l_title: "Título", l_refresh: "Recálculo (minutos)", l_animation: "Animar dispositivos em funcionamento", l_language: "Idioma", auto: "Automático (perfil)",
+      l_entity: "Entidade monitorizada", l_name: "Nome apresentado", l_icon: "Ícone", l_mode: "Em funcionamento quando…",
+      l_on_states: "Estados «em funcionamento» (separados por vírgulas)", l_threshold: "Limite",
+      l_power_entity: "Sensor de potência (estatísticas)", l_on_power: "Potência em funcionamento (W, automática se vazio)", l_idle_power: "Consumo em repouso (W)",
+      h_on_states: "Predefinição: on. Exemplo para um termóstato: heat, cool", h_threshold: "Por exemplo 3 para «em funcionamento acima de 3 W»",
+      h_power_entity: "Opcional: estima a coluna Ano para além do histórico guardado", year_section: "Coluna Ano (opcional)",
+      devices: "Dispositivos", new_device: "Novo dispositivo", pick_entity: "escolha uma entidade", up: "Mover para cima", down: "Mover para baixo", del: "Eliminar", add: "Adicionar dispositivo",
+      card_name: "HOLM – Tempo de funcionamento", card_desc: "Tempo de funcionamento por dispositivo calculado a partir do histórico, sem auxiliar" },
+    pl: { title: "Czas pracy", today: "Dziś", yesterday: "Wczoraj", week: "Tydzień", month: "Miesiąc", year: "Rok",
+      no_device: "Dodaj urządzenie w edytorze karty.", error: "Błąd", loading: "Ładowanie…",
+      partial: "Niepełna historia w tym okresie", estimated: "Oszacowano na podstawie statystyk mocy sprzed ostatnich 30 dni",
+      mode_state: "Według stanu (on, heat…)", mode_above: "Wartość powyżej progu", mode_below: "Wartość poniżej progu",
+      l_title: "Tytuł", l_refresh: "Przeliczanie (minuty)", l_animation: "Animuj działające urządzenia", l_language: "Język", auto: "Automatycznie (profil)",
+      l_entity: "Śledzona encja", l_name: "Wyświetlana nazwa", l_icon: "Ikona", l_mode: "Działa, gdy…",
+      l_on_states: "Stany „działa” (oddzielone przecinkami)", l_threshold: "Próg",
+      l_power_entity: "Czujnik mocy (statystyki)", l_on_power: "Moc podczas pracy (W, automatycznie, jeśli puste)", l_idle_power: "Pobór w spoczynku (W)",
+      h_on_states: "Domyślnie: on. Przykład dla termostatu: heat, cool", h_threshold: "Na przykład 3 dla „działa powyżej 3 W”",
+      h_power_entity: "Opcjonalnie: szacuje kolumnę Rok poza przechowywaną historią", year_section: "Kolumna Rok (opcjonalnie)",
+      devices: "Urządzenia", new_device: "Nowe urządzenie", pick_entity: "wybierz encję", up: "W górę", down: "W dół", del: "Usuń", add: "Dodaj urządzenie",
+      card_name: "HOLM – Czas pracy", card_desc: "Czas pracy każdego urządzenia obliczany z historii, bez pomocnika" },
+  };
+  const LANG_NAMES = { fr: "Français", en: "English", de: "Deutsch", es: "Español", it: "Italiano", nl: "Nederlands", pt: "Português", pl: "Polski" };
+  // langue : option `language` de la carte, sinon celle du profil Home Assistant ; anglais si non traduite
+  const langOf = (hass, c) => { const l = String((c && c.language) || hass?.locale?.language || hass?.language || navigator.language || "en").toLowerCase().split(/[-_]/)[0]; return I18N[l] ? l : "en"; };
+  const tr = (l, k) => (I18N[l] && I18N[l][k]) ?? I18N.en[k] ?? I18N.fr[k] ?? k;
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   // icônes qui tournent quand l'appareil est en marche
   const SPIN = /fan|air-filter|air-purifier|hvac|turbine|pump|ventilat|washing-machine|tumble-dryer|dishwasher|robot-vacuum|sync|cog/;
@@ -32,12 +135,12 @@
     static getStubConfig(hass) {
       const ids = Object.keys(hass?.states || {});
       const e = ids.find((i) => i.startsWith("switch.")) || ids.find((i) => i.startsWith("fan.")) || ids.find((i) => i.startsWith("light.")) || "";
-      return { title: "Temps de fonctionnement", devices: e ? [{ entity: e }] : [] };
+      return { devices: e ? [{ entity: e }] : [] };
     }
     setConfig(c) {
       if (!c) throw new Error("holm-runtime-card : configuration invalide");
       const devices = Array.isArray(c.devices) ? c.devices.filter((d) => d && d.entity) : [];
-      this._c = { title: "Temps de fonctionnement", refresh_minutes: 5, animation: true, ...c, devices };
+      this._c = { refresh_minutes: 5, animation: true, ...c, devices };
       this._fetched = 0;
       this._rows = null;
       if (this.shadowRoot) { this._render(); if (this._hass) { this._fetched = Date.now(); this._load(); } }
@@ -54,6 +157,7 @@
     }
     disconnectedCallback() { clearInterval(this._tick); }
 
+    _t(k) { return tr(langOf(this._hass, this._c), k); }
     _periods() {
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -62,10 +166,10 @@
       const week = new Date(today.getTime() - dow * 86400000);
       const month = new Date(now.getFullYear(), now.getMonth(), 1);
       return [
-        { k: "Aujourd'hui", a: today, b: now, live: true },
-        { k: "Hier", a: yesterday, b: today },
-        { k: "Semaine", a: week, b: now, live: true },
-        { k: "Mois", a: month, b: now, live: true },
+        { k: "today", a: today, b: now, live: true },
+        { k: "yesterday", a: yesterday, b: today },
+        { k: "week", a: week, b: now, live: true },
+        { k: "month", a: month, b: now, live: true },
       ];
     }
     _yearStart() { const n = new Date(); return new Date(n.getFullYear(), 0, 1); }
@@ -157,7 +261,7 @@
         }
         this._rows = rows;
         this._loadedAt = Date.now();
-        this._heads = [...periods.map((p) => p.k), "Année"];
+        this._heads = [...periods.map((p) => p.k), "year"];
         this._err = null;
       } catch (e) {
         this._err = e && e.message ? e.message : String(e);
@@ -198,12 +302,12 @@
     }
     _render() {
       if (!this.shadowRoot || !this._c) return;
-      const heads = this._heads || [...this._periods().map((p) => p.k), "Année"];
+      const heads = (this._heads || [...this._periods().map((p) => p.k), "year"]).map((k) => this._t(k));
       const anim = this._c.animation !== false;
       let body;
-      if (!this._c.devices.length) body = `<div class="msg">Ajoutez un appareil dans l'éditeur de la carte.</div>`;
-      else if (this._err) body = `<div class="msg">Erreur : ${esc(this._err)}</div>`;
-      else if (!this._rows) body = `<div class="msg">Chargement…</div>`;
+      if (!this._c.devices.length) body = `<div class="msg">${this._t("no_device")}</div>`;
+      else if (this._err) body = `<div class="msg">${this._t("error")} : ${esc(this._err)}</div>`;
+      else if (!this._rows) body = `<div class="msg">${this._t("loading")}</div>`;
       else body = `
         <table>
           <thead><tr><th></th>${heads.map((h) => `<th>${h}</th>`).join("")}</tr></thead>
@@ -213,7 +317,7 @@
             return `
             <tr class="${on ? "on" : ""}" data-entity="${esc(r.d.entity)}">
               <td class="n"><div class="nw"><span class="ic${SPIN.test(icon) ? " spin" : ""}"><ha-icon icon="${esc(icon)}"></ha-icon><i class="dot"></i></span><span class="nm">${esc(this._name(r.d))}</span></div></td>
-              ${r.vals.map((v) => `<td class="v${v.sec || (on && v.live) ? "" : " z"}" title="${v.partial ? "Historique incomplet sur cette période" : v.estimated ? "Estimé depuis les statistiques de puissance avant les 30 derniers jours" : ""}">${this._cell(v, on)}</td>`).join("")}
+              ${r.vals.map((v) => `<td class="v${v.sec || (on && v.live) ? "" : " z"}" title="${v.partial ? this._t("partial") : v.estimated ? this._t("estimated") : ""}">${this._cell(v, on)}</td>`).join("")}
             </tr>`;
           }).join("")}
           </tbody>
@@ -272,7 +376,7 @@
           }
         </style>
         <ha-card>
-          ${this._c.title ? `<div class="hdr">${esc(this._c.title)}</div>` : ""}
+          ${(this._c.title ?? this._t("title")) ? `<div class="hdr">${esc(this._c.title ?? this._t("title"))}</div>` : ""}
           ${body}
         </ha-card>`;
       this.shadowRoot.querySelectorAll("tbody tr").forEach((tr) => tr.addEventListener("click", () => {
@@ -286,22 +390,10 @@
   }
 
   // ───────────────────────── éditeur visuel ─────────────────────────
-  const MODES = [
-    { value: "state", label: "Selon son état (on, heat…)" },
-    { value: "above", label: "Valeur au-dessus d'un seuil" },
-    { value: "below", label: "Valeur en dessous d'un seuil" },
-  ];
-  const LABELS = {
-    title: "Titre", refresh_minutes: "Recalcul (minutes)", animation: "Animer les appareils en marche",
-    entity: "Entité suivie", name: "Nom affiché", icon: "Icône", mode: "En marche quand…",
-    on_states: "États « en marche » (séparés par des virgules)", threshold: "Seuil",
-    power_entity: "Capteur de puissance (statistiques)", on_power: "Puissance en marche (W, auto si vide)", idle_power: "Consommation à l'arrêt (W)",
-  };
-  const HELPERS = {
-    on_states: "Par défaut : on. Exemple pour un thermostat : heat, cool",
-    threshold: "Par exemple 3 pour « en marche au-dessus de 3 W »",
-    power_entity: "Facultatif : estime la colonne Année au-delà de l'historique conservé",
-  };
+  const MODES = (l) => ["state", "above", "below"].map((v) => ({ value: v, label: tr(l, "mode_" + v) }));
+  const LABELS = { title: "l_title", refresh_minutes: "l_refresh", animation: "l_animation", language: "l_language", entity: "l_entity", name: "l_name", icon: "l_icon",
+    mode: "l_mode", on_states: "l_on_states", threshold: "l_threshold", power_entity: "l_power_entity", on_power: "l_on_power", idle_power: "l_idle_power" };
+  const HELPERS = { on_states: "h_on_states", threshold: "h_threshold", power_entity: "h_power_entity" };
 
   class HolmRuntimeCardEditor extends HTMLElement {
     setConfig(c) {
@@ -315,6 +407,7 @@
       this._hass = h;
       this.shadowRoot?.querySelectorAll("ha-form").forEach((f) => { f.hass = h; });
     }
+    get _l() { return langOf(this._hass, this._c); }
     _emit() {
       const cfg = { ...this._c, devices: this._c.devices.filter((d) => d.entity).map((d) => {
         const o = {};
@@ -327,6 +420,7 @@
       }) };
       if (cfg.animation === true) delete cfg.animation;
       if (Number(cfg.refresh_minutes) === 5) delete cfg.refresh_minutes;
+      if (!cfg.language) delete cfg.language;
       this._last = JSON.stringify(cfg);
       this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: cfg }, bubbles: true, composed: true }));
     }
@@ -344,9 +438,9 @@
       return [
         { name: "entity", required: true, selector: { entity: {} } },
         { type: "grid", name: "", schema: [{ name: "name", selector: { text: {} } }, { name: "icon", selector: { icon: {} } }] },
-        { name: "mode", selector: { select: { mode: "dropdown", options: MODES } } },
+        { name: "mode", selector: { select: { mode: "dropdown", options: MODES(this._l) } } },
         mode === "state" ? { name: "on_states", selector: { text: {} } } : { name: "threshold", required: true, selector: { number: { mode: "box", step: "any" } } },
-        { type: "expandable", name: "", title: "Colonne Année (facultatif)", flatten: true, schema: [
+        { type: "expandable", name: "", title: tr(this._l, "year_section"), flatten: true, schema: [
           { name: "power_entity", selector: { entity: { domain: "sensor", device_class: "power" } } },
           { type: "grid", name: "", schema: [
             { name: "on_power", selector: { number: { mode: "box", min: 0, step: "any", unit_of_measurement: "W" } } },
@@ -388,25 +482,25 @@
           .add:hover { background: color-mix(in srgb, var(--primary-color) 10%, transparent); }
         </style>
         <ha-form id="top"></ha-form>
-        <div class="ttl">Appareils</div>
+        <div class="ttl">${tr(this._l, "devices")}</div>
         <div class="devs">
           ${devs.map((d, i) => {
             const st = d.entity && h?.states[d.entity];
-            const nm = d.name || st?.attributes.friendly_name || d.entity || "Nouvel appareil";
+            const nm = d.name || st?.attributes.friendly_name || d.entity || tr(this._l, "new_device");
             const icon = d.icon || st?.attributes.icon || "mdi:power";
             return `<div class="dev" data-i="${i}">
-              <div class="dh" data-toggle="${i}"><ha-icon icon="${esc(icon)}"></ha-icon><div class="t">${esc(nm)}<small>${esc(d.entity || "choisissez une entité")}</small></div>
-                <button data-up="${i}" title="Monter" ${i === 0 ? "disabled" : ""}><ha-icon icon="mdi:arrow-up"></ha-icon></button>
-                <button data-down="${i}" title="Descendre" ${i === devs.length - 1 ? "disabled" : ""}><ha-icon icon="mdi:arrow-down"></ha-icon></button>
-                <button data-del="${i}" title="Supprimer"><ha-icon icon="mdi:delete-outline"></ha-icon></button>
+              <div class="dh" data-toggle="${i}"><ha-icon icon="${esc(icon)}"></ha-icon><div class="t">${esc(nm)}<small>${esc(d.entity || tr(this._l, "pick_entity"))}</small></div>
+                <button data-up="${i}" title="${tr(this._l, "up")}" ${i === 0 ? "disabled" : ""}><ha-icon icon="mdi:arrow-up"></ha-icon></button>
+                <button data-down="${i}" title="${tr(this._l, "down")}" ${i === devs.length - 1 ? "disabled" : ""}><ha-icon icon="mdi:arrow-down"></ha-icon></button>
+                <button data-del="${i}" title="${tr(this._l, "del")}"><ha-icon icon="mdi:delete-outline"></ha-icon></button>
                 <ha-icon icon="${this._open === i ? "mdi:chevron-up" : "mdi:chevron-down"}"></ha-icon></div>
               ${this._open === i ? `<div class="db"><ha-form data-form="${i}"></ha-form></div>` : ""}
             </div>`;
           }).join("")}
         </div>
-        <button class="add" id="add"><ha-icon icon="mdi:plus"></ha-icon>Ajouter un appareil</button>`;
-      const label = (s) => LABELS[s.name] ?? s.title ?? s.name;
-      const helper = (s) => HELPERS[s.name];
+        <button class="add" id="add"><ha-icon icon="mdi:plus"></ha-icon>${tr(this._l, "add")}</button>`;
+      const label = (s) => (LABELS[s.name] ? tr(this._l, LABELS[s.name]) : s.title ?? s.name);
+      const helper = (s) => (HELPERS[s.name] ? tr(this._l, HELPERS[s.name]) : undefined);
       const top = this.shadowRoot.getElementById("top");
       top.hass = h; top.computeLabel = label;
       top.schema = [
@@ -415,13 +509,16 @@
           { name: "refresh_minutes", selector: { number: { mode: "box", min: 1, max: 120, unit_of_measurement: "min" } } },
           { name: "animation", selector: { boolean: {} } },
         ] },
+        { name: "language", selector: { select: { mode: "dropdown", options: [{ value: "", label: tr(this._l, "auto") }, ...Object.entries(LANG_NAMES).map(([value, label]) => ({ value, label }))] } } },
       ];
-      top.data = { title: this._c.title ?? "Temps de fonctionnement", refresh_minutes: this._c.refresh_minutes ?? 5, animation: this._c.animation !== false };
+      top.data = { title: this._c.title ?? tr(this._l, "title"), refresh_minutes: this._c.refresh_minutes ?? 5, animation: this._c.animation !== false, language: this._c.language || "" };
       top.addEventListener("value-changed", (e) => {
         e.stopPropagation();
         const v = e.detail.value;
-        this._c.title = v.title; this._c.refresh_minutes = v.refresh_minutes; this._c.animation = v.animation;
+        const relang = (v.language || "") !== (this._c.language || "");
+        this._c.title = v.title; this._c.refresh_minutes = v.refresh_minutes; this._c.animation = v.animation; this._c.language = v.language || undefined;
         this._emit();
+        if (relang) this._build();
       });
       this.shadowRoot.querySelectorAll("ha-form[data-form]").forEach((f) => {
         const i = Number(f.dataset.form);
@@ -463,7 +560,8 @@
   if (!customElements.get("holm-runtime-card-editor")) customElements.define("holm-runtime-card-editor", HolmRuntimeCardEditor);
   window.customCards = window.customCards || [];
   if (!window.customCards.some((c) => c.type === "holm-runtime-card")) {
-    window.customCards.push({ type: "holm-runtime-card", name: "HOLM – Temps de fonctionnement", description: "Durée de marche par appareil calculée depuis l'historique, sans helper", preview: true });
+    const l = langOf(document.querySelector("home-assistant")?.hass);
+    window.customCards.push({ type: "holm-runtime-card", name: tr(l, "card_name"), description: tr(l, "card_desc"), preview: true });
   }
   console.info(`%c HOLM-RUNTIME %c ${VERSION} `, "background:#4a90d9;color:#111;border-radius:3px 0 0 3px", "background:#123;color:#fff;border-radius:0 3px 3px 0");
 })();

@@ -4,6 +4,8 @@
 ![Version](https://img.shields.io/github/v/release/kaaribou/holm-runtime-card)
 ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2025.1%2B-03a9f4)
 
+🇫🇷 Français · [🇬🇧 English](README.en.md)
+
 **Combien de temps tourne la VMC, le chauffe-eau ou la pompe de la piscine ? Aujourd'hui, hier, cette semaine, ce mois, cette année — sans créer un seul helper.**
 
 HOLM Runtime Card calcule le **temps de fonctionnement** de vos appareils directement à partir de l'**historique** de Home Assistant. Pas de capteur `history_stats` à créer, pas d'automatisation : on liste les appareils, la carte fait les calculs.
@@ -21,7 +23,11 @@ HOLM Runtime Card calcule le **temps de fonctionnement** de vos appareils direct
 
 ![Un appareil en marche](docs/images/en-marche.png)
 
-### 🆕 Nouveautés de la 1.1.0
+### 🆕 Nouveautés de la 1.2.0
+
+- 🌍 **La carte parle 8 langues** : français, anglais, allemand, espagnol, italien, néerlandais, portugais et polonais. Elle suit la langue de votre profil Home Assistant (anglais si votre langue n'est pas traduite), et l'option `language` permet d'en imposer une.
+
+### Nouveautés de la 1.1.0
 
 - **Éditeur visuel** : ajoutez, réordonnez et supprimez vos appareils ; pour chacun, l'entité, le nom, l'icône, la règle « en marche » (selon l'état ou selon un seuil) et, en option, la colonne Année.
 - **Animation des appareils en marche**, désactivable, et coupée automatiquement si votre système demande moins d'animations.
@@ -80,10 +86,11 @@ devices:
 
 | Option | Description | Par défaut |
 |---|---|---|
-| `title` | Titre (vide pour le masquer) | `Temps de fonctionnement` |
+| `title` | Titre (vide pour le masquer) | `Temps de fonctionnement` (dans la langue de la carte) |
 | `devices` | Liste des appareils | — |
 | `refresh_minutes` | Intervalle de recalcul | `5` |
 | `animation` | Animer les appareils en marche | `true` |
+| `language` | Langue de la carte : `fr`, `en`, `de`, `es`, `it`, `nl`, `pt`, `pl` | celle du profil |
 
 Chaque appareil accepte :
 
