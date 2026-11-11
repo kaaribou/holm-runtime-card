@@ -1,4 +1,4 @@
-/* holm-runtime-card — https://github.com/kaaribou/holm-runtime-card — licence MIT — v1.2.0 */
+/* holm-runtime-card — https://github.com/kaaribou/holm-runtime-card — licence MIT — v1.3.0 */
 // holm-runtime-card — temps de fonctionnement calculé directement depuis l'historique (recorder), sans helper
 // Config (éditeur visuel disponible) :
 //   type: custom:holm-runtime-card
@@ -12,12 +12,15 @@
 //       above: 3                            # numérique : en marche si > 3
 //     - entity: fan.x
 //       on_states: [on, heat]               # liste d'états considérés "en marche"
+//     - entity: climate.salon
+//       attribute: hvac_action              # suit un attribut au lieu de l'état (ici : chauffe réelle)
+//       on_states: [heating]
 // Colonne Année (statistiques long terme, au-delà des 30 jours d'historique) :
 //       power_entity: sensor.xxx_power      # capteur de puissance avec statistiques
 //       on_power: 30                        # puissance en marche (W) — auto si absent
 //       idle_power: 0                       # consommation à l'arrêt (W)
 (() => {
-  const VERSION = "1.2.0";
+  const VERSION = "1.3.0";
   // ───────────────────────── traductions ─────────────────────────
   const I18N = {
     fr: { title: "Temps de fonctionnement", today: "Aujourd'hui", yesterday: "Hier", week: "Semaine", month: "Mois", year: "Année",
@@ -26,7 +29,7 @@
       mode_state: "Selon son état (on, heat…)", mode_above: "Valeur au-dessus d'un seuil", mode_below: "Valeur en dessous d'un seuil",
       l_title: "Titre", l_refresh: "Recalcul (minutes)", l_animation: "Animer les appareils en marche", l_language: "Langue", auto: "Automatique (profil)",
       l_entity: "Entité suivie", l_name: "Nom affiché", l_icon: "Icône", l_mode: "En marche quand…",
-      l_on_states: "États « en marche » (séparés par des virgules)", l_threshold: "Seuil",
+      l_on_states: "États « en marche » (séparés par des virgules)", l_threshold: "Seuil", l_attribute: "Attribut suivi (facultatif)", h_attribute: "Vide : l'état de l'entité. Thermostat : hvac_action, avec l'état « heating » pour la chauffe réelle",
       l_power_entity: "Capteur de puissance (statistiques)", l_on_power: "Puissance en marche (W, auto si vide)", l_idle_power: "Consommation à l'arrêt (W)",
       h_on_states: "Par défaut : on. Exemple pour un thermostat : heat, cool", h_threshold: "Par exemple 3 pour « en marche au-dessus de 3 W »",
       h_power_entity: "Facultatif : estime la colonne Année au-delà de l'historique conservé", year_section: "Colonne Année (facultatif)",
@@ -38,7 +41,7 @@
       mode_state: "By its state (on, heat…)", mode_above: "Value above a threshold", mode_below: "Value below a threshold",
       l_title: "Title", l_refresh: "Refresh (minutes)", l_animation: "Animate running devices", l_language: "Language", auto: "Automatic (profile)",
       l_entity: "Tracked entity", l_name: "Display name", l_icon: "Icon", l_mode: "Running when…",
-      l_on_states: "“Running” states (comma-separated)", l_threshold: "Threshold",
+      l_on_states: "“Running” states (comma-separated)", l_threshold: "Threshold", l_attribute: "Tracked attribute (optional)", h_attribute: "Empty: the entity's state. Thermostat: hvac_action, with the “heating” state for actual heating",
       l_power_entity: "Power sensor (statistics)", l_on_power: "Running power (W, auto if empty)", l_idle_power: "Idle power (W)",
       h_on_states: "Default: on. Example for a thermostat: heat, cool", h_threshold: "For example 3 for “running above 3 W”",
       h_power_entity: "Optional: estimates the Year column beyond the kept history", year_section: "Year column (optional)",
@@ -50,7 +53,7 @@
       mode_state: "Nach Zustand (on, heat…)", mode_above: "Wert über einem Schwellenwert", mode_below: "Wert unter einem Schwellenwert",
       l_title: "Titel", l_refresh: "Neuberechnung (Minuten)", l_animation: "Laufende Geräte animieren", l_language: "Sprache", auto: "Automatisch (Profil)",
       l_entity: "Überwachte Entität", l_name: "Anzeigename", l_icon: "Symbol", l_mode: "Läuft, wenn…",
-      l_on_states: "„Laufend“-Zustände (durch Kommas getrennt)", l_threshold: "Schwellenwert",
+      l_on_states: "„Laufend“-Zustände (durch Kommas getrennt)", l_threshold: "Schwellenwert", l_attribute: "Überwachtes Attribut (optional)", h_attribute: "Leer: der Zustand der Entität. Thermostat: hvac_action mit dem Zustand „heating“ für das tatsächliche Heizen",
       l_power_entity: "Leistungssensor (Statistiken)", l_on_power: "Leistung im Betrieb (W, automatisch wenn leer)", l_idle_power: "Leistung im Ruhezustand (W)",
       h_on_states: "Standard: on. Beispiel für ein Thermostat: heat, cool", h_threshold: "Zum Beispiel 3 für „läuft über 3 W“",
       h_power_entity: "Optional: schätzt die Spalte Jahr über den gespeicherten Verlauf hinaus", year_section: "Spalte Jahr (optional)",
@@ -62,7 +65,7 @@
       mode_state: "Según su estado (on, heat…)", mode_above: "Valor por encima de un umbral", mode_below: "Valor por debajo de un umbral",
       l_title: "Título", l_refresh: "Recálculo (minutos)", l_animation: "Animar los dispositivos en marcha", l_language: "Idioma", auto: "Automático (perfil)",
       l_entity: "Entidad seguida", l_name: "Nombre mostrado", l_icon: "Icono", l_mode: "En marcha cuando…",
-      l_on_states: "Estados «en marcha» (separados por comas)", l_threshold: "Umbral",
+      l_on_states: "Estados «en marcha» (separados por comas)", l_threshold: "Umbral", l_attribute: "Atributo seguido (opcional)", h_attribute: "Vacío: el estado de la entidad. Termostato: hvac_action, con el estado «heating» para la calefacción real",
       l_power_entity: "Sensor de potencia (estadísticas)", l_on_power: "Potencia en marcha (W, automática si está vacío)", l_idle_power: "Consumo en reposo (W)",
       h_on_states: "Por defecto: on. Ejemplo para un termostato: heat, cool", h_threshold: "Por ejemplo 3 para «en marcha por encima de 3 W»",
       h_power_entity: "Opcional: estima la columna Año más allá del historial conservado", year_section: "Columna Año (opcional)",
@@ -74,7 +77,7 @@
       mode_state: "In base allo stato (on, heat…)", mode_above: "Valore sopra una soglia", mode_below: "Valore sotto una soglia",
       l_title: "Titolo", l_refresh: "Ricalcolo (minuti)", l_animation: "Anima i dispositivi in funzione", l_language: "Lingua", auto: "Automatica (profilo)",
       l_entity: "Entità monitorata", l_name: "Nome visualizzato", l_icon: "Icona", l_mode: "In funzione quando…",
-      l_on_states: "Stati «in funzione» (separati da virgole)", l_threshold: "Soglia",
+      l_on_states: "Stati «in funzione» (separati da virgole)", l_threshold: "Soglia", l_attribute: "Attributo monitorato (facoltativo)", h_attribute: "Vuoto: lo stato dell'entità. Termostato: hvac_action, con lo stato «heating» per il riscaldamento effettivo",
       l_power_entity: "Sensore di potenza (statistiche)", l_on_power: "Potenza in funzione (W, automatica se vuota)", l_idle_power: "Consumo a riposo (W)",
       h_on_states: "Predefinito: on. Esempio per un termostato: heat, cool", h_threshold: "Ad esempio 3 per «in funzione sopra 3 W»",
       h_power_entity: "Facoltativo: stima la colonna Anno oltre la cronologia conservata", year_section: "Colonna Anno (facoltativa)",
@@ -86,7 +89,7 @@
       mode_state: "Op basis van de status (on, heat…)", mode_above: "Waarde boven een drempel", mode_below: "Waarde onder een drempel",
       l_title: "Titel", l_refresh: "Herberekening (minuten)", l_animation: "Actieve apparaten animeren", l_language: "Taal", auto: "Automatisch (profiel)",
       l_entity: "Gevolgde entiteit", l_name: "Weergavenaam", l_icon: "Pictogram", l_mode: "Actief wanneer…",
-      l_on_states: "‘Actief’-statussen (gescheiden door komma's)", l_threshold: "Drempel",
+      l_on_states: "‘Actief’-statussen (gescheiden door komma's)", l_threshold: "Drempel", l_attribute: "Gevolgd attribuut (optioneel)", h_attribute: "Leeg: de status van de entiteit. Thermostaat: hvac_action, met de status ‘heating’ voor echt verwarmen",
       l_power_entity: "Vermogenssensor (statistieken)", l_on_power: "Vermogen bij werking (W, automatisch indien leeg)", l_idle_power: "Verbruik in rust (W)",
       h_on_states: "Standaard: on. Voorbeeld voor een thermostaat: heat, cool", h_threshold: "Bijvoorbeeld 3 voor ‘actief boven 3 W’",
       h_power_entity: "Optioneel: schat de kolom Jaar buiten de bewaarde geschiedenis", year_section: "Kolom Jaar (optioneel)",
@@ -98,7 +101,7 @@
       mode_state: "Pelo estado (on, heat…)", mode_above: "Valor acima de um limite", mode_below: "Valor abaixo de um limite",
       l_title: "Título", l_refresh: "Recálculo (minutos)", l_animation: "Animar dispositivos em funcionamento", l_language: "Idioma", auto: "Automático (perfil)",
       l_entity: "Entidade monitorizada", l_name: "Nome apresentado", l_icon: "Ícone", l_mode: "Em funcionamento quando…",
-      l_on_states: "Estados «em funcionamento» (separados por vírgulas)", l_threshold: "Limite",
+      l_on_states: "Estados «em funcionamento» (separados por vírgulas)", l_threshold: "Limite", l_attribute: "Atributo monitorizado (opcional)", h_attribute: "Vazio: o estado da entidade. Termóstato: hvac_action, com o estado «heating» para o aquecimento real",
       l_power_entity: "Sensor de potência (estatísticas)", l_on_power: "Potência em funcionamento (W, automática se vazio)", l_idle_power: "Consumo em repouso (W)",
       h_on_states: "Predefinição: on. Exemplo para um termóstato: heat, cool", h_threshold: "Por exemplo 3 para «em funcionamento acima de 3 W»",
       h_power_entity: "Opcional: estima a coluna Ano para além do histórico guardado", year_section: "Coluna Ano (opcional)",
@@ -110,7 +113,7 @@
       mode_state: "Według stanu (on, heat…)", mode_above: "Wartość powyżej progu", mode_below: "Wartość poniżej progu",
       l_title: "Tytuł", l_refresh: "Przeliczanie (minuty)", l_animation: "Animuj działające urządzenia", l_language: "Język", auto: "Automatycznie (profil)",
       l_entity: "Śledzona encja", l_name: "Wyświetlana nazwa", l_icon: "Ikona", l_mode: "Działa, gdy…",
-      l_on_states: "Stany „działa” (oddzielone przecinkami)", l_threshold: "Próg",
+      l_on_states: "Stany „działa” (oddzielone przecinkami)", l_threshold: "Próg", l_attribute: "Śledzony atrybut (opcjonalnie)", h_attribute: "Puste: stan encji. Termostat: hvac_action ze stanem „heating” dla rzeczywistego grzania",
       l_power_entity: "Czujnik mocy (statystyki)", l_on_power: "Moc podczas pracy (W, automatycznie, jeśli puste)", l_idle_power: "Pobór w spoczynku (W)",
       h_on_states: "Domyślnie: on. Przykład dla termostatu: heat, cool", h_threshold: "Na przykład 3 dla „działa powyżej 3 W”",
       h_power_entity: "Opcjonalnie: szacuje kolumnę Rok poza przechowywaną historią", year_section: "Kolumna Rok (opcjonalnie)",
@@ -197,6 +200,14 @@
       }
       return sec;
     }
+    // valeur suivie : l'état, ou un attribut (option `attribute`) — sans valeur si l'entité est indisponible
+    _val(d, st) {
+      if (!st) return undefined;
+      if (!d.attribute) return st.state;
+      if (st.state === "unavailable" || st.state === "unknown") return st.state;
+      const v = st.attributes ? st.attributes[d.attribute] : undefined;
+      return v === undefined || v === null ? undefined : typeof v === "object" ? JSON.stringify(v) : v;
+    }
     _isOn(d, s) {
       if (s === undefined || s === null || s === "unavailable" || s === "unknown") return false;
       if (d.above !== undefined && d.above !== null && d.above !== "") { const v = parseFloat(s); return !isNaN(v) && v > Number(d.above); }
@@ -218,19 +229,26 @@
         const t29 = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29);
         const cut = t29 > ys ? t29 : ys; // avant : statistiques ; après : historique exact
         const start = new Date(Math.min(cut.getTime(), ...periods.map((p) => p.a.getTime())));
-        const ids = [...new Set(this._c.devices.map((d) => d.entity))];
-        const r = await this._hass.callWS({
+        // appareils suivis par leur état : historique léger (sans attributs), comme avant
+        // appareils suivis par un attribut (option `attribute`) : historique avec attributs, demandé pour eux seuls
+        const ids = [...new Set(this._c.devices.filter((d) => !d.attribute).map((d) => d.entity))];
+        const attrIds = [...new Set(this._c.devices.filter((d) => d.attribute).map((d) => d.entity))];
+        const hist = (entity_ids, attrs) => entity_ids.length ? this._hass.callWS({
           type: "history/history_during_period",
           start_time: start.toISOString(),
           end_time: now.toISOString(),
-          entity_ids: ids,
-          minimal_response: true,
-          no_attributes: true,
+          entity_ids,
+          minimal_response: !attrs,
+          no_attributes: !attrs,
           significant_changes_only: false,
-        });
+        }) : Promise.resolve({});
+        const [r, ra] = await Promise.all([hist(ids, false), hist(attrIds, true)]);
         const nowS = now.getTime() / 1000;
         const rows = this._c.devices.map((d) => {
-          const hist = (r[d.entity] || []).map((x) => ({ t: x.lc !== undefined ? x.lc : x.lu, s: x.s })).sort((a, b) => a.t - b.t);
+          const hist = d.attribute
+            // un changement d'attribut ne change pas « last_changed » : on prend « last_updated »
+            ? (ra[d.entity] || []).map((x) => ({ t: x.lu !== undefined ? x.lu : x.lc, s: this._val(d, { state: x.s, attributes: x.a }) })).sort((a, b) => a.t - b.t)
+            : (r[d.entity] || []).map((x) => ({ t: x.lc !== undefined ? x.lc : x.lu, s: x.s })).sort((a, b) => a.t - b.t);
           const firstT = hist.length ? hist[0].t : nowS;
           const vals = periods.map((p) => {
             const A = p.a.getTime() / 1000, B = p.b.getTime() / 1000;
@@ -289,7 +307,7 @@
       const trs = this.shadowRoot.querySelectorAll("tbody tr");
       this._rows.forEach((row, i) => {
         const tr = trs[i]; if (!tr) return;
-        const on = this._isOn(row.d, this._hass?.states[row.d.entity]?.state);
+        const on = this._isOn(row.d, this._val(row.d, this._hass?.states[row.d.entity]));
         if (tr.classList.contains("on") !== on || tick) {
           tr.classList.toggle("on", on);
           tr.querySelectorAll("td.v").forEach((td, j) => {
@@ -312,7 +330,7 @@
         <table>
           <thead><tr><th></th>${heads.map((h) => `<th>${h}</th>`).join("")}</tr></thead>
           <tbody>${this._rows.map((r) => {
-            const on = this._isOn(r.d, this._hass?.states[r.d.entity]?.state);
+            const on = this._isOn(r.d, this._val(r.d, this._hass?.states[r.d.entity]));
             const icon = this._icon(r.d);
             return `
             <tr class="${on ? "on" : ""}" data-entity="${esc(r.d.entity)}">
@@ -392,8 +410,8 @@
   // ───────────────────────── éditeur visuel ─────────────────────────
   const MODES = (l) => ["state", "above", "below"].map((v) => ({ value: v, label: tr(l, "mode_" + v) }));
   const LABELS = { title: "l_title", refresh_minutes: "l_refresh", animation: "l_animation", language: "l_language", entity: "l_entity", name: "l_name", icon: "l_icon",
-    mode: "l_mode", on_states: "l_on_states", threshold: "l_threshold", power_entity: "l_power_entity", on_power: "l_on_power", idle_power: "l_idle_power" };
-  const HELPERS = { on_states: "h_on_states", threshold: "h_threshold", power_entity: "h_power_entity" };
+    mode: "l_mode", on_states: "l_on_states", threshold: "l_threshold", power_entity: "l_power_entity", on_power: "l_on_power", idle_power: "l_idle_power", attribute: "l_attribute" };
+  const HELPERS = { on_states: "h_on_states", threshold: "h_threshold", power_entity: "h_power_entity", attribute: "h_attribute" };
 
   class HolmRuntimeCardEditor extends HTMLElement {
     setConfig(c) {
@@ -411,7 +429,7 @@
     _emit() {
       const cfg = { ...this._c, devices: this._c.devices.filter((d) => d.entity).map((d) => {
         const o = {};
-        for (const k of ["entity", "name", "icon", "on_states", "above", "below", "power_entity", "on_power", "idle_power"]) {
+        for (const k of ["entity", "name", "icon", "attribute", "on_states", "above", "below", "power_entity", "on_power", "idle_power"]) {
           const v = d[k];
           if (v === undefined || v === null || v === "" || (Array.isArray(v) && !v.length)) continue;
           o[k] = v;
@@ -428,16 +446,18 @@
       const mode = d.above !== undefined && d.above !== "" ? "above" : d.below !== undefined && d.below !== "" ? "below" : "state";
       const st = d.on_states || (d.on_state ? [d.on_state] : []);
       return {
-        entity: d.entity || "", name: d.name || "", icon: d.icon || "", mode,
+        entity: d.entity || "", name: d.name || "", icon: d.icon || "", attribute: d.attribute || "", mode,
         on_states: (Array.isArray(st) ? st : [st]).join(", "),
         threshold: mode === "above" ? d.above : mode === "below" ? d.below : undefined,
         power_entity: d.power_entity || "", on_power: d.on_power, idle_power: d.idle_power,
       };
     }
-    _devSchema(mode) {
+    _devSchema(mode, entity) {
       return [
         { name: "entity", required: true, selector: { entity: {} } },
         { type: "grid", name: "", schema: [{ name: "name", selector: { text: {} } }, { name: "icon", selector: { icon: {} } }] },
+        // facultatif : suivre un attribut de l'entité (ex. hvac_action d'un thermostat) au lieu de son état
+        { name: "attribute", selector: entity ? { attribute: { entity_id: entity } } : { text: {} } },
         { name: "mode", selector: { select: { mode: "dropdown", options: MODES(this._l) } } },
         mode === "state" ? { name: "on_states", selector: { text: {} } } : { name: "threshold", required: true, selector: { number: { mode: "box", step: "any" } } },
         { type: "expandable", name: "", title: tr(this._l, "year_section"), flatten: true, schema: [
@@ -450,7 +470,7 @@
       ];
     }
     _setDev(i, v) {
-      const o = { entity: v.entity, name: v.name, icon: v.icon, power_entity: v.power_entity, on_power: v.on_power, idle_power: v.idle_power };
+      const o = { entity: v.entity, name: v.name, icon: v.icon, attribute: v.attribute || undefined, power_entity: v.power_entity, on_power: v.on_power, idle_power: v.idle_power };
       if (v.mode === "above") o.above = v.threshold ?? 0;
       else if (v.mode === "below") o.below = v.threshold ?? 0;
       else {
@@ -524,7 +544,7 @@
         const i = Number(f.dataset.form);
         const data = this._devData(devs[i]);
         f.hass = h; f.computeLabel = label; f.computeHelper = helper;
-        f.schema = this._devSchema(data.mode); f.data = data;
+        f.schema = this._devSchema(data.mode, data.entity); f.data = data;
         f.addEventListener("value-changed", (e) => {
           e.stopPropagation();
           const v = e.detail.value;
@@ -532,7 +552,7 @@
           const entityChanged = v.entity !== f.data.entity;
           this._setDev(i, v);
           f.data = this._devData(this._c.devices[i]);
-          if (modeChanged) f.schema = this._devSchema(f.data.mode);
+          if (modeChanged) f.schema = this._devSchema(f.data.mode, f.data.entity);
           this._emit();
           if (entityChanged) this._build();   // met à jour le titre du bloc
         });

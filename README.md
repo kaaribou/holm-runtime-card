@@ -23,7 +23,16 @@ HOLM Runtime Card calcule le **temps de fonctionnement** de vos appareils direct
 
 ![Un appareil en marche](docs/images/en-marche.png)
 
-### 🆕 Nouveautés de la 1.2.0
+### 🆕 Nouveautés de la 1.3.0
+
+- 🎯 **Suivre un attribut au lieu de l'état** (option `attribute`). Utile quand l'état ne dit pas si l'appareil tourne vraiment : un thermostat reste en `heat` toute la journée, mais son attribut `hvac_action` passe à `heating` seulement quand il chauffe. Les règles habituelles s'appliquent à l'attribut : liste d'états (`heating`) ou seuil numérique (par exemple `current_temperature` au-dessus de 20 °C).
+- Dans l'éditeur, le champ **Attribut suivi (facultatif)** propose la liste des attributs de l'entité choisie. Laissé vide, rien ne change : la carte suit l'état, comme avant.
+
+![Attributs suivis : la carte et l'éditeur](docs/images/attributs.png)
+
+*À gauche, chaque ligne suit un attribut : « Thermostat séjour en veille » compte le temps où `hvac_action` vaut `idle`, « Séjour au-dessus de 20 °C » le temps où `current_temperature` dépasse 20, « Chauffe-eau » suit toujours son état. À droite, le champ **Attribut suivi** de l'éditeur, placé avant la règle « En marche quand… », qui s'applique alors à l'attribut.*
+
+### Nouveautés de la 1.2.0
 
 - 🌍 **La carte parle 8 langues** : français, anglais, allemand, espagnol, italien, néerlandais, portugais et polonais. Elle suit la langue de votre profil Home Assistant (anglais si votre langue n'est pas traduite), et l'option `language` permet d'en imposer une.
 
@@ -62,6 +71,8 @@ Ajoutez la carte **HOLM – Temps de fonctionnement** à un tableau de bord, pui
 - **Valeur au-dessus d'un seuil** : par exemple un capteur de puissance au-dessus de 3 W ;
 - **Valeur en dessous d'un seuil**.
 
+Le champ **Attribut suivi (facultatif)** fait porter cette règle sur un attribut de l'entité au lieu de son état : par exemple `hvac_action` d'un thermostat, avec l'état `heating`, pour compter le temps de chauffe réel. Laissé vide, la carte suit l'état.
+
 La section **Colonne Année** (facultative) accepte un capteur de puissance avec statistiques pour estimer l'année au-delà de l'historique conservé.
 
 L'équivalent en YAML :
@@ -80,6 +91,10 @@ devices:
   - name: Pompe à chaleur
     entity: climate.pompe_a_chaleur
     on_states: [heat, cool]
+  - name: Chauffe réelle du séjour
+    entity: climate.sejour
+    attribute: hvac_action       # suit l'attribut au lieu de l'état
+    on_states: [heating]
 ```
 
 ## Options
@@ -98,6 +113,7 @@ Chaque appareil accepte :
 |---|---|
 | `entity` | Entité suivie (**obligatoire**) |
 | `name`, `icon` | Nom et icône affichés (par défaut ceux de l'entité) |
+| `attribute` | Attribut suivi au lieu de l'état (ex. `hvac_action`, `current_temperature`) ; `on_states`, `above` et `below` s'appliquent alors à cet attribut. Facultatif |
 | `on_state` / `on_states` | État(s) considéré(s) comme « en marche » (défaut `on`) |
 | `above` / `below` | Pour une valeur numérique : en marche au-dessus / en dessous du seuil |
 | `power_entity` | Capteur de puissance avec statistiques, pour estimer l'année au-delà de l'historique |
@@ -108,6 +124,7 @@ Chaque appareil accepte :
 
 - Home Assistant conserve l'historique détaillé **10 jours par défaut** (réglage `recorder: purge_keep_days`). Au-delà, une valeur suivie de « * » signale un historique incomplet sur la période.
 - Sans `power_entity`, la colonne Année ne compte que la partie couverte par l'historique (« * »).
+- Avec `attribute`, la carte lit l'historique avec les attributs, uniquement pour les entités concernées : les autres appareils sont chargés comme avant. Les statistiques long terme ne gardent pas les attributs ; pour une année complète, ajoutez un `power_entity`.
 - L'icône tourne quand elle évoque un appareil rotatif (ventilateur, VMC, pompe, lave-linge, sèche-linge, lave-vaisselle, aspirateur robot…) ; les autres « respirent ».
 
 ## FAQ
@@ -115,6 +132,7 @@ Chaque appareil accepte :
 | Problème | Solution |
 |---|---|
 | Mois ou Année marqués « * » | Augmentez `purge_keep_days` du recorder, ou ajoutez un `power_entity` pour l'estimation annuelle. |
+| Mon thermostat est compté « en marche » toute la journée | Son état reste `heat` même quand il ne chauffe pas : choisissez l'attribut `hvac_action` et l'état `heating`. |
 | Je ne veux pas d'animation | Décochez **Animer les appareils en marche** (`animation: false`). |
 | La nouvelle version ne s'affiche pas | Videz le cache (Ctrl + F5). |
 
@@ -134,4 +152,4 @@ Code : licence **MIT** — © kaaribou. Voir le [CHANGELOG](CHANGELOG.md).
 
 Fait partie de **HOLM — Home Orchestration & Living Management** : la gestion et l'orchestration intelligente de la maison.
 
-Les autres projets : [Volets HOLM](https://github.com/kaaribou/volets-holm) · [Climat HOLM](https://github.com/kaaribou/climat-holm) · [Carburant HOLM](https://github.com/kaaribou/carburant-holm) · [Commandes à la maison HOLM](https://github.com/kaaribou/commandes-holm) · [HOLM LaMetric](https://github.com/kaaribou/lametric-holm) · [HOLM My Menu](https://github.com/kaaribou/holm-mymenu) · [HOLM Lektrico](https://github.com/kaaribou/lektrico-holm) · [HOLM Navbar Card](https://github.com/kaaribou/holm-navbar-card) · [HOLM Climate Card](https://github.com/kaaribou/climate-card-holm) · [HOLM Music Card](https://github.com/kaaribou/holm-music-card) · [HOLM Sentinel Card](https://github.com/kaaribou/holm-sentinel-card) · [HOLM Security Card](https://github.com/kaaribou/holm-security-card) · [HOLM Recordings Card](https://github.com/kaaribou/holm-recordings-card) · [HOLM Covers Card](https://github.com/kaaribou/holm-covers-card) · [HOLM Power Flow Card](https://github.com/kaaribou/holm-power-flow-card) · [HOLM Energy Cards](https://github.com/kaaribou/holm-energy-cards) · [HOLM Radiator Card](https://github.com/kaaribou/holm-radiator-card) · [HOLM Floor Card](https://github.com/kaaribou/holm-floor-card) · [HOLM Ecojoko Card](https://github.com/kaaribou/holm-ecojoko-card) · [HOLM Smoke Card](https://github.com/kaaribou/holm-smoke-card) · [HOLM BG Card](https://github.com/kaaribou/holm-bg-card).
+Les autres projets : [Volets HOLM](https://github.com/kaaribou/volets-holm) · [Climat HOLM](https://github.com/kaaribou/climat-holm) · [Carburant HOLM](https://github.com/kaaribou/carburant-holm) · [Commandes à la maison HOLM](https://github.com/kaaribou/commandes-holm) · [HOLM LaMetric](https://github.com/kaaribou/lametric-holm) · [HOLM My Menu](https://github.com/kaaribou/holm-mymenu) · [HOLM Lektrico](https://github.com/kaaribou/lektrico-holm) · [HOLM Navbar Card](https://github.com/kaaribou/holm-navbar-card) · [HOLM Climate Card](https://github.com/kaaribou/climate-card-holm) · [HOLM Music Card](https://github.com/kaaribou/holm-music-card) · [HOLM Sentinel Card](https://github.com/kaaribou/holm-sentinel-card) · [HOLM Security Card](https://github.com/kaaribou/holm-security-card) · [HOLM Recordings Card](https://github.com/kaaribou/holm-recordings-card) · [HOLM Covers Card](https://github.com/kaaribou/holm-covers-card) · [HOLM Ecojoko Card](https://github.com/kaaribou/holm-ecojoko-card) · [HOLM Power Flow Card](https://github.com/kaaribou/holm-power-flow-card) · [HOLM Energy Cards](https://github.com/kaaribou/holm-energy-cards) · [HOLM Radiator Card](https://github.com/kaaribou/holm-radiator-card) · [HOLM Floor Card](https://github.com/kaaribou/holm-floor-card) · [HOLM HP/HC](https://github.com/kaaribou/holm-tarif) · [HOLM Smoke Card](https://github.com/kaaribou/holm-smoke-card) · [HOLM BG Card](https://github.com/kaaribou/holm-bg-card).
